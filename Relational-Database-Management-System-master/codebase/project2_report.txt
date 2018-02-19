@@ -1,0 +1,118 @@
+1. Basic information
+Team number (e.g., 01) : 08
+#1 Student ID : 60525527		
+#1 Student Name : Abhinaya Dasarathy	
+#2 Student ID : 33246700
+#2 Student Name : Priyanka Ravi
+OS (bit) : Ubuntu 16.04 (64 bit)
+gcc version :
+
+
+2. Meta-data
+- Show your meta-data design (Tables and Columns table) and information about each column.
+
+Tables (table-id:int, table-name:varchar(50), file-name:varchar(50), system-table:int)
+Columns(table-id:int, column-name:varchar(50), column-type:int, column-length:int, column-position:int, system-table:int)
+
+system-table is used to check if the corresponding entry is user-defined table or used for catalog purposes(system). The other attributes retain their meaning as mentioned in the project description.
+
+3. Internal Record Format
+- Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that your team hasn't implemented this feature.
+- Describe how you store a VarChar field.
+- Describe how you deal with an update and delete.
+
+The record format which we have used comprises of-
+1. Number of fields(attributes) - first two bytes (short int)
+2. Offset of the end of the fields - using short int
+3. Values in the record
+
+Eg: Anteater 25 177.8 6200 is stored in the page in the following format
+
+----------------------------------------------------------
+ | 4  | 17 | 21 | 25 | 29 | Anteater   | 25 | 177.8 | 6200 |  Data Stored
+----------------------------------------------------------
+ | 2B | 2B | 2B | 2B | 2B | 8B(varchar)| 2B | 2B     | 2B  |   Bytes occupied
+------------------------------------------------------------
+
+O(1) Field Access:
+Since the offset of end of the fields are stored , we can access the fields directly form the location pointed by the offset instead of parsing n times.   
+Eg: If we want to access Age, we know it is the third field and it is Int type from Record Descriptor, hence we retrieve the offset from the directory space and directly access the field.
+
+VarChar field:
+varchar field is also stored similarly; from the field's offset difference, we can easily get the size of the varchar field and also read from the offset of varchar field directory.
+
+Delete:
+1. Search for the record using the given RID. If the record is already deleted, there would be a tombstone with a -1 which indicates there is no record.
+2. Move from next record to the beginning of free space  , to the beginning of the record to be deleted. (Compaction)
+3. Update the free space size(last 2B of the page).
+4. Update the deleted record's slot entry as -1.
+
+Update:
+1. Calculate the new record size to be updated.
+2. Find the original RID after passing through the tombstones from the given RID.
+3. Case 1: If the new record size is equal to the original record size,overwrite the record.
+   Case 2: If the size is less than the original record size, then overwrite the original record and compact.
+   Case 3: If the size is greater than the original record size,check if the difference in record sizes is available in the current page. 
+		a) If so, push the other records after the current record(to be updated) by the difference in size and overwrite the record.
+		b) If not, insert the record using InsertRecord of rbfm (which looks for free space). Create a tombstone in the original record position 		   with the following information-
+    				-1 Page_Num(of the inserted record) Slot_Num(of the inserted record).
+
+4. Page Format
+- Show your page format design.
+- Describe how you deal with an update and delete.
+
+Page Format:
+
+The page has the following spaces reserved:
+1. Records are stored starting from the beginning of a page
+2. The last 2B (short int) corresponds to the free space offset(beginning of free space).
+3. The second last 2B (short int) corresponds to the number of records stored in the page.
+4. AFter the number of records start the slot directory where the offsets of Records get stored.
+
+      ---------------------------------------------------------
+      |   R1  (len:30) |      R2 (len:40)  |                  |
+      ---------------------------------------------------------
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      ---------------------------------------------------------
+      |                |31(R2beg)| 0(R1beg)|2(no.of R)|71(FSP)|
+      ---------------------------------------------------------
+
+Eg:suppose there are 3 records R1, R2, R3 with sizes 20Bytes, 25Bytes, 30 Bytes resepectively, the page will be stored as follows.
+ ______________________
+|R1   |R2   |R3    |   |
+|                      |
+|                      |
+|                      |
+|                      |
+| 45 | 20 | 0 | 3 | 76 |
+ ------------------------
+
+Update:
+ 
+Case 1: If the new record size is equal to the original record size, there is no change in the free space of the page.
+   Case 2: If the size is less than the original record size, then compaction creates an increase in free space.
+   Case 3: If the size is greater than the original record size,check if the difference in record sizes is available in the current page. 
+		a) If so, free space decreases in the current page.
+		b) If not, free space increases in current page and decreases by new record size in the page where it gets inserted. Updated record replaced by a tombstone.
+Free space offset changed.
+
+Delete:
+compaction creates an increase in free space and slot entry of corresponding record is made -1.
+
+5. File Format
+- Show your file format design
+Files are split into blocks(pages) ; each page has a number of records managed using a directory maintained at the end of the page.
+There are separate files for Tables, Columns and every other table created.
+
+6. Implementation Detail
+- Other implementation details goes here.
+
+
+7. Other (optional)
+- Freely use this section to tell us about things that are related to the project 2, but not related to the other sections (optional)
+

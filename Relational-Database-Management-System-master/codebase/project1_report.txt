@@ -1,0 +1,104 @@
+1. Basic information
+Student ID :
+ 
+Student Name : Abhinaya Dasarathy (ID:60525527)
+ 
+OS (bit) : Windows10 64 bit
+ 
+gcc version :
+
+
+ 4.9.3
+
+2. Internal Record Format
+-Show your record format design and describe how your design satisfies O(1) field access. If not, just mention that you haven't implemented this feature.
+
+- Describe how you store a VarChar field.
+
+
+
+
+Record Format:
+
+The record format which I have used comprises of-
+1. Number of fields(attributes) - first two bytes (short int)
+2. Offset of the end of the fields - using short int
+3. Values in the record
+
+Eg: Anteater 25 177.8 6200 is stored in the page in the following format
+
+----------------------------------------------------------
+ | 4  | 17 | 21 | 25 | 29 | Anteater   | 25 | 177.8 | 6200 |  Data Stored
+----------------------------------------------------------
+ | 2B | 2B | 2B | 2B | 2B | 8B(varchar)| 2B | 2B     | 2B  |   Bytes occupied
+------------------------------------------------------------
+
+O(1) Field Access:
+Since the offset of end of the fields are stored , we can access the fields directly form the location pointed by the offset instead of parsing n times.   
+Eg: If we want to access Age, we know it is the third field and it is Int type from Record Descriptor, hence we retrieve the offset from the directory space and directly access the field.
+
+VarChar field:
+varchar field is also stored similarly; from the field's offset difference, we can easily get the size of the varchar field and also read from the offset of varchar field directory.
+
+3. Page Format
+- Show your page format design
+
+Page Format:
+
+The page has the following spaces reserved:
+1. Records are stored starting from the beginning of a page
+2. The last 2B (short int) corresponds to the free space offset(beginning of free space).
+3. The second last 2B (short int) corresponds to the number of records stored in the page.
+4. AFter the number of records start the slot directory where the offsets of Records get stored.
+
+      --------------------------------------------------------
+      |   R1  (len:30) |      R2 (len:40)  |                  |
+      ---------------------------------------------------------
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      ----------------------------------------------------------
+      |                |31(R2beg)| 0(R1beg)|2(no.of R)|71(FSP)|
+      ---------------------------------------------------------
+
+Eg:suppose there are 3 records R1, R2, R3 with sizes 20Bytes, 25Bytes, 30 Bytes resepectively, the page will be stored as follows.
+ ______________________
+|R1   |R2   |R3    |   |
+|                      |
+|                      |
+|                      |
+|                      |
+| 45 | 20 | 0 | 3 | 76 |
+ ------------------------
+
+
+
+
+
+4. Implementation Detail
+- Other implementation details goes here.
+
+PFM:
+a. Added a FILE object (public) to handle read and write operations.
+b. I have used the fopen/fclose/fwrite/fread functions for the various operations.
+
+RBFM:
+a. Before inserting, I am converting the record format given as parameter(null bits indicator+actual data) to the format in which I store the data.(no.of fields+endoffsetof fields+actual data).
+b. The following cases are handled for insertion:
+    -> when it is an empty file, append a new page
+    -> if not, check last page for free space using the newly introduced method getAvailableFreeSpace()
+    -> If space for the record + directory entry(2B) is not present in the page, check from beginning of the file to the end for free space.
+    ->if free space found, insert record to that page.
+    -> if space not found in any of the pages, append a new page and insert record.
+c. Updation of free space offset, number of records and slot directory is done everytime a record gets inserted.
+
+
+
+
+
+5. Other (optional)
+- Freely use this section to tell us about things that are related to the project 1, but not related to the other sections (optional)
+

@@ -1,0 +1,88 @@
+1. Basic information
+Team number (e.g., 01) : 08
+#1 Student ID : 33246700	
+#1 Student Name : Priyanka Ravi	
+#2 Student ID : 60525527
+#2 Student Name : Abhinaya Dasarathy
+OS (bit) :RedHat Linux 64 bit
+gcc version : 4.8.5
+
+
+2. Meta-data page in an index file
+- Show your meta-data page of an index design if you have any. 
+
+Page number for Root page is fixed (Page 0). hence we do not have any meta-data page for index design.
+
+3. Index Entry Format
+- Show your index entry design (structure). 
+
+The non-leaf page of index has only the key and the pointers before and after each key.
+The left pointer points to page containing keys less than the current page key. The right pointer points to pages containing keys which are greater than or equal to current page key.
+The leaf page stores the key and RID. Multiple RIDs having same key value also will be stored in the format-
+
+     key1 RID1 key1 RID2 key1 RID3
+
+  
+
+4. Page Format
+- Show your internal-page (non-leaf node) design.
+       
+      ---------------------------------------------------------
+      |n |P0| k1  | P1 | k2 | P2|                             |
+      ---------------------------------------------------------
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      ---------------------------------------------------------
+      |                                 |no.of R  |FS in bytes|
+      ---------------------------------------------------------
+
+ -> First 1 byte stores if the node is non-leaf or root (n- non-leaf;r-root)
+ -> Then we store pointer followed by key. Pointer(P0,P1,P2...) is of size int.
+ -> Key will be of size 4 if int or real. If the attribute type is varchar, key will have the length of key for 4 bytes followed by the key value.
+ -> Last 2 bytes stores the free space in the page in bytes.
+ -> The 2 bytes before the free space stores the number of records.
+
+- Show your leaf-page (leaf node) design.
+
+      ----------------------------------------------------------
+      |l |k1 RID1 | k2 RID2 |                                 |
+      ---------------------------------------------------------
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      |                                                       |
+      ---------------------------------------------------------
+      |                     |sibling Ptr|no.of R  |FS in bytes|
+      ---------------------------------------------------------
+
+ -> First 1 byte stores if the node is leaf (l-leaf)
+ -> Then we store the key values and the corresponding RIDs.
+ -> Key will be of size 4 if int or real. If the attribute type is varchar, key will have the length of key for 4 bytes followed by the key value.
+ -> RID will be of size 8 bytes(4 bytes-page num 4 bytes-slot num)
+ -> Last 2 bytes(PAGE_SIZE-2) stores the free space in the page in bytes.
+ -> The second last 2 bytes (PAGE_SIZE-2-2)stores the number of records.
+ -> The third last 2 bytes (PAGE_SIZE-2-2-4) stores the sibling page number.
+
+5. Implementation Detail
+- Have you added your own source file (.cc or .h)?
+  No
+
+- Have you implemented non-lazy deletion? Choose Yes or No:  No
+
+- Have you implemented duplicated key handling that can span multiple pages? Choose Yes or No: No
+  If yes, please explain briefly how you have implemented this feature.
+
+- Other implementation details:
+
+Node-Split:
+Whenever the page occupancy becomes greater than half, the node gets split.
+
+6. Other (optional)
+- Freely use this section to tell us about things that are related to the project 3, but not related to the other sections (optional)
+
